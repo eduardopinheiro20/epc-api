@@ -74,4 +74,59 @@ public class IaClient {
     }
 
 
+    public Map<String, Object> getBankroll() {
+        return webClient.get()
+                        .uri("/bankroll")
+                        .retrieve()
+                        .bodyToMono(new ParameterizedTypeReference<Map<String,Object>>() {})
+                        .block();
+    }
+
+    // POST /bankroll/create
+    public Map<String, Object> createBankroll(double initial) {
+        return webClient.post()
+                        .uri("/bankroll/create")
+                        .bodyValue(Map.of("initial", initial))
+                        .retrieve()
+                        .bodyToMono(new ParameterizedTypeReference<Map<String,Object>>() {})
+                        .block();
+    }
+
+    // POST /bankroll/apply-ticket
+    public Map<String, Object> applyTicket(Long ticketId) {
+        return webClient.post()
+                        .uri("/bankroll/apply-ticket")
+                        .bodyValue(Map.of("ticket_id", ticketId))
+                        .retrieve()
+                        .bodyToMono(new ParameterizedTypeReference<Map<String,Object>>() {})
+                        .block();
+    }
+
+    // POST /bankroll/reset
+    public Map<String, Object> resetBankroll() {
+        return webClient.post()
+                        .uri("/bankroll/reset")
+                        .retrieve()
+                        .bodyToMono(new ParameterizedTypeReference<Map<String,Object>>() {})
+                        .block();
+    }
+
+    // GET /cron/validar-tickets
+    public Map<String, Object> validarTicketsCron() {
+        return webClient.get()
+                        .uri("/cron/validar-tickets")
+                        .retrieve()
+                        .bodyToMono(new ParameterizedTypeReference<Map<String,Object>>() {})
+                        .block();
+    }
+
+    // POST /processar-bilhetes
+    public Map<String, Object> processarBilhetes() {
+        return webClient.post()
+                        .uri("/processar-bilhetes")
+                        .retrieve()
+                        .bodyToMono(new ParameterizedTypeReference<Map<String,Object>>() {})
+                        .block();
+    }
+
 }

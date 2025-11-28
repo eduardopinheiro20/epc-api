@@ -57,6 +57,11 @@ public class IaController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/processar-bilhetes")
+    public ResponseEntity<?> processarBilhetes() {
+        return ResponseEntity.ok(iaClient.processarBilhetes());
+    }
+
     @GetMapping("/jogos-futuros")
     public ResponseEntity<?> jogosFuturos() {
         var result = iaClient.getJogosFuturos();
