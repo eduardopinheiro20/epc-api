@@ -1,8 +1,13 @@
 package com.example_api.epc.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "tickets")
 public class Ticket {
@@ -33,13 +38,9 @@ public class Ticket {
     @Column(name = "applied_to_bankroll")
     private Boolean appliedToBankroll = false;
 
-    // para simplicidade, armazenamos a FK como coluna; mapeamento ManyToOne abaixo
-    @Column(name = "bankroll_id", insertable = false, updatable = false)
-    private Long bankrollId;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bankroll_id")
-    private com.example_api.epc.entity.Bankroll bankroll;
+    private Bankroll bankroll;
 
     // meta como JSON serializado (string)
     @Column(name = "meta", columnDefinition = "text")
@@ -63,44 +64,4 @@ public class Ticket {
         updatedAt = LocalDateTime.now();
     }
 
-    // ---------- getters / setters ----------
-    // (gerar todos os getters/setters ou usar Lombok @Data se preferir)
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getCreatedBy() { return createdBy; }
-    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-
-    public LocalDateTime getSavedAt() { return savedAt; }
-    public void setSavedAt(LocalDateTime savedAt) { this.savedAt = savedAt; }
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-
-    public String getResult() { return result; }
-    public void setResult(String result) { this.result = result; }
-
-    public Double getFinalOdd() { return finalOdd; }
-    public void setFinalOdd(Double finalOdd) { this.finalOdd = finalOdd; }
-
-    public Double getCombinedProb() { return combinedProb; }
-    public void setCombinedProb(Double combinedProb) { this.combinedProb = combinedProb; }
-
-    public Boolean getAppliedToBankroll() { return appliedToBankroll; }
-    public void setAppliedToBankroll(Boolean appliedToBankroll) { this.appliedToBankroll = appliedToBankroll; }
-
-    public Long getBankrollId() { return bankrollId; }
-    public void setBankrollId(Long bankrollId) { this.bankrollId = bankrollId; }
-
-    public com.example_api.epc.entity.Bankroll getBankroll() { return bankroll; }
-    public void setBankroll(com.example_api.epc.entity.Bankroll bankroll) { this.bankroll = bankroll; }
-
-    public String getMeta() { return meta; }
-    public void setMeta(String meta) { this.meta = meta; }
-
-    public String getSignature() { return signature; }
-    public void setSignature(String signature) { this.signature = signature; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

@@ -10,8 +10,6 @@ public interface BankrollService {
 
     Map<String,Object> reset();
 
-    Map<String, Object> applyTicket(Long ticketId);
-
     Map<String, Object> vincularTicket(Long ticketId);
 
     Map<String, Object> validarAutomatico();

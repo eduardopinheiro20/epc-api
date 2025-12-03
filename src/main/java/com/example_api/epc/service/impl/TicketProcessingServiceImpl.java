@@ -9,13 +9,17 @@ import com.example_api.epc.repository.FixtureRepository;
 import com.example_api.epc.repository.TicketRepository;
 import com.example_api.epc.repository.TicketSelectionRepository;
 import com.example_api.epc.service.TicketProcessingService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -28,27 +32,163 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
 
     @Override
     @Transactional
-    public Map<String, Object> processPendingTickets() {
-        List<Ticket> pending = ticketRepository.findByStatus("PENDING");
+    public Ticket saveAndLink(Map<String, Object> json) {
 
-        int processed = 0;
-        int green = 0;
-        int red = 0;
+        try {
+            // ------------------------------
+            // Get Banca Ativa
+            // ------------------------------
+            Optional<Bankroll> opt = bankrollRepository.findActiveBankroll();
 
-        for (Ticket t : pending) {
-            boolean done = processSingleTicket(t.getId());
-            if (done) {
-                processed++;
-                if ("GREEN".equals(t.getResult())) green++;
-                if ("RED".equals(t.getResult())) red++;
+            // ------------------------------
+            // 1) MONTAR O TICKET
+            // ------------------------------
+            Ticket t = new Ticket();
+            t.setCreatedBy("SYSTEM");
+            t.setSavedAt(LocalDateTime.now());
+            t.setStatus("PENDING");
+            t.setResult(null);
+
+            if (opt.isPresent()) {
+                Bankroll bankroll = opt.get();
+                t.setAppliedToBankroll(true);
+                t.setBankroll(bankroll);
+            } else {
+                t.setAppliedToBankroll(false);
+                t.setBankroll(null);
             }
+
+            // segurança: validar nulls
+            Object finalOddObj = json.get("final_odd");
+            Object combinedProbObj = json.get("combined_prob");
+
+            double finalOdd = finalOddObj != null ? Double.parseDouble(finalOddObj.toString()) : 1.0;
+            double combinedProb = combinedProbObj != null ? Double.parseDouble(combinedProbObj.toString()) : 0.0;
+
+            t.setFinalOdd(finalOdd);
+            t.setCombinedProb(combinedProb);
+
+            // META (guarda campos opcionais)
+            Map<String, Object> meta = new HashMap<>();
+            meta.put("explanation", json.get("explanation"));
+            meta.put("system_recommendation", json.get("system_recommendation"));
+            meta.put("confidence_formatted", json.get("confidence_formatted"));
+            t.setMeta(meta.toString());
+
+            // ------------------------------
+            // SELEÇÕES (para assinatura)
+            // ------------------------------
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> selections = (List<Map<String, Object>>) json.getOrDefault("selections", Collections.emptyList());
+
+            // SERIALIZAR SELEÇÕES para assinatura
+            String signatureRaw;
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                signatureRaw = mapper.writeValueAsString(selections) + finalOdd;
+            } catch (JsonProcessingException e) {
+                // fallback simples se Jackson falhar por algum motivo
+                signatureRaw = selections.toString() + finalOdd;
+            }
+
+            // MD5 com java.security (sem libs externas)
+            String signature;
+            try {
+                MessageDigest md = MessageDigest.getInstance("MD5");
+                byte[] digest = md.digest(signatureRaw.getBytes(StandardCharsets.UTF_8));
+                signature = String.format("%032x", new BigInteger(1, digest));
+            } catch (Exception ex) {
+                // fallback: usar hashCode (menos ideal, mas evita crash)
+                signature = Integer.toHexString(signatureRaw.hashCode());
+            }
+            t.setSignature(signature);
+
+            // Verificar duplicata (assuma que exista findBySignature)
+            Ticket dupe = ticketRepository.findBySignature(signature);
+            if (dupe != null) {
+                return dupe; // retorna bilhete existente
+            }
+
+            // ------------------------------
+            // SALVAR TICKET (gera ID)
+            // ------------------------------
+            ticketRepository.save(t);
+
+            // ------------------------------
+            // SALVAR SELEÇÕES
+            // ------------------------------
+            for (Map<String, Object> s : selections) {
+                TicketSelection ts = new TicketSelection();
+                ts.setTicketId(t.getId());
+                Object fixIdObj = s.get("fixture_id");
+                if (fixIdObj != null) {
+                    ts.setFixtureId(Long.valueOf(fixIdObj.toString()));
+                }
+                ts.setHomeName(Objects.toString(s.get("home"), null));
+                ts.setAwayName(Objects.toString(s.get("away"), null));
+                ts.setMarket(Objects.toString(s.get("market"), null));
+                Object oddObj = s.get("odd");
+                if (oddObj != null) ts.setOdd(Double.parseDouble(oddObj.toString()));
+                Object probObj = s.get("prob");
+                if (probObj != null) ts.setProb(Double.parseDouble(probObj.toString()));
+
+                selectionRepository.save(ts);
+            }
+
+            return t;
+
+        } catch (Exception e) {
+            // logue o erro (use seu logger)
+            e.printStackTrace();
+            throw new RuntimeException("Erro ao salvar e vincular ticket: " + e.getMessage(), e);
+        }
+    }
+
+
+    @Override
+    @Transactional
+    public Map<String, Object> processPendingTickets() {
+
+        Map<String, Object> result = new HashMap<>();
+
+        List<Ticket> pendentes = ticketRepository.findByStatus("PENDING");
+
+        int total = pendentes.size();
+        int processados = 0;
+        int ignorados = 0;
+
+        for (Ticket t : pendentes) {
+
+            // Seleções do bilhete
+            List<TicketSelection> sels = selectionRepository.findByTicketId(t.getId());
+            boolean allFinished = true;
+
+            // Verifica se TODOS os fixtures já terminaram
+            for (TicketSelection sel : sels) {
+                Fixture f = fixtureRepository.findById(sel.getFixtureId()).orElse(null);
+
+                if (f == null || !isFixtureFinished(f.getStatus())) {
+                    allFinished = false;
+                    break;
+                }
+            }
+
+            // ❌ Ainda não pode processar
+            if (!allFinished) {
+                ignorados++;
+                continue;
+            }
+
+            // ✔ Pode processar o bilhete
+            processSingleTicket(t.getId());
+            processados++;
         }
 
-        return Map.of(
-                        "processed", processed,
-                        "green", green,
-                        "red", red
-        );
+        result.put("totalPendentes", total);
+        result.put("processados", processados);
+        result.put("ignorados", ignorados);
+
+        return result;
     }
 
     @Override
@@ -58,32 +198,29 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
         Ticket ticket = ticketRepository.findById(ticketId).orElse(null);
         if (ticket == null) return false;
 
+        // Já processado
+        if ("FINISHED".equals(ticket.getStatus()))
+            return false;
+
         List<TicketSelection> selections = selectionRepository.findByTicketId(ticketId);
 
-        // Buscar fixtures
+        boolean allGreen = true;
+
         for (TicketSelection sel : selections) {
 
             Fixture f = fixtureRepository.findById(sel.getFixtureId()).orElse(null);
-
             if (f == null) return false;
 
-            if (!isFixtureFinished(f.getStatus())) {
-                return false; // ainda não terminou
-            }
-
             boolean win = evaluateSelection(sel, f);
+
             if (!win) {
-                ticket.setStatus("FINISHED");
-                ticket.setResult("RED");
-                ticketRepository.save(ticket);
-                applyBankrollIfNeeded(ticket);
-                return true;
+                allGreen = false;
+                break;
             }
         }
 
-        // se todas ganharam
         ticket.setStatus("FINISHED");
-        ticket.setResult("GREEN");
+        ticket.setResult(allGreen ? "GREEN" : "RED");
         ticketRepository.save(ticket);
 
         applyBankrollIfNeeded(ticket);
@@ -91,13 +228,15 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
         return true;
     }
 
+
     private boolean isFixtureFinished(String status) {
         if (status == null) return false;
         status = status.toUpperCase();
-        return status.startsWith("FT") || status.equals("AET") || status.equals("PEN");
+        return status.startsWith("FT") || status.equals("AET") || status.equals("P");
     }
 
     private boolean evaluateSelection(TicketSelection sel, Fixture f) {
+
         int home = Optional.ofNullable(f.getHomeGoals()).orElse(0);
         int away = Optional.ofNullable(f.getAwayGoals()).orElse(0);
         int total = home + away;
@@ -105,9 +244,10 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
         String market = sel.getMarket().toLowerCase();
 
         try {
+
             if (market.startsWith("under")) {
                 double limit = Double.parseDouble(market.replace("under", "").trim());
-                return total <= Math.floor(limit);
+                return total <= limit;
             }
 
             if (market.startsWith("over")) {
@@ -117,15 +257,21 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
 
             if (market.contains("away under")) {
                 double limit = Double.parseDouble(market.replace("away under", "").trim());
-                return away <= Math.floor(limit);
+                return away <= limit;
             }
 
             if (market.contains("handicap +")) {
-                int n = Integer.parseInt(market.split("\\+")[1].split(" ")[0]);
-                return away + n >= home;
+
+                // handicap tipo "+3 (away)"
+                String nStr = market.split("\\+")[1].split(" ")[0];
+                int n = Integer.parseInt(nStr);
+
+                // away + handicap >= home
+                return (away + n) >= home;
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
 
@@ -133,21 +279,33 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
     }
 
     private void applyBankrollIfNeeded(Ticket ticket) {
-        if (!Boolean.TRUE.equals(ticket.getAppliedToBankroll())) return;
-        if (ticket.getBankrollId() == null) return;
 
-        Bankroll b = bankrollRepository.findById(ticket.getBankrollId()).orElse(null);
+        if (!Boolean.TRUE.equals(ticket.getAppliedToBankroll())) return;
+        if (ticket.getBankroll() == null) return;
+
+        Bankroll b = bankrollRepository.findById(ticket.getBankroll().getId()).orElse(null);
         if (b == null) return;
 
         if ("GREEN".equals(ticket.getResult())) {
-            double mult = b.getCurrentAmount() * ticket.getFinalOdd();
-            b.setCurrentAmount(mult);
+
+            // Multiplica a banca
+            double newAmount = b.getCurrentAmount() * ticket.getFinalOdd();
+            b.setCurrentAmount(newAmount);
+
+            // IMPORTANTE:
+            // A banca CONTINUA ativa para a próxima rodada
+            b.setStatus("ACTIVE");
+
         } else {
+
+            // RED → banca é encerrada
             b.setCurrentAmount(0.0);
+            b.setStatus("FINISHED");  // ENCERRA SOMENTE QUANDO PERDE
         }
 
-        b.setStatus("FINISHED");
         bankrollRepository.save(b);
     }
+
+
 }
 

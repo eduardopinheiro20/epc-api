@@ -6,6 +6,7 @@ import com.example_api.epc.repository.BankrollRepository;
 import com.example_api.epc.repository.TicketRepository;
 import com.example_api.epc.service.BankrollService;
 import com.example_api.epc.service.TicketProcessingService;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,7 @@ public class BankrollServiceImpl implements BankrollService {
     }
 
     @Override
+    @Transactional
     public Map<String,Object> create(double initial) {
         Optional<Bankroll> existing = repository.findActiveBankroll();
 
@@ -59,43 +61,41 @@ public class BankrollServiceImpl implements BankrollService {
     }
 
     @Override
+    @Transactional
     public Map<String,Object> reset() {
         repository.deleteAll();
         return Map.of("reset", true);
     }
 
     // Aplicar (multiplicar) bilhete
-    @Override
-    public Map<String, Object> applyTicket(Long ticketId) {
-
-        Optional<Bankroll> opt = repository.findActiveBankroll();
-        Optional<Ticket> t = ticketRepo.findById(ticketId);
-
-        if (opt.isEmpty() || t.isEmpty()) {
-            return Map.of("error", "Banca ou ticket inexistente");
-        }
-
-        Bankroll b = opt.get();
-        Ticket ticket = t.get();
-
-        // Agora aplica IMEDIATO, independentemente do resultado
-        double newValue = b.getCurrentAmount() * ticket.getFinalOdd();
-        b.setCurrentAmount(newValue);
-
-        // Marca que já foi aplicada
-        ticket.setAppliedToBankroll(true);
-
-        repository.save(b);
-        ticketRepo.save(ticket);
-
-        return Map.of(
-                        "applied", true,
-                        "new_amount", newValue,
-                        "bankroll", b
-        );
-    }
+//    @Override
+//    @Transactional
+//    public Map<String, Object> applyTicket(Long ticketId) {
+//
+//        Optional<Bankroll> opt = repository.findActiveBankroll();
+//        Optional<Ticket> t = ticketRepo.findById(ticketId);
+//
+//        if (opt.isEmpty() || t.isEmpty()) {
+//            return Map.of("error", "Banca ou ticket inexistente");
+//        }
+//
+//        Bankroll b = opt.get();
+//        Ticket ticket = t.get();
+//
+//        // Marca que pertence à banca
+//        ticket.setAppliedToBankroll(true);
+//        ticket.setBankroll(b);
+//
+//        ticketRepo.save(ticket);
+//
+//        return Map.of(
+//                        "applied", true,
+//                        "bankroll", b
+//        );
+//    }
 
     @Override
+    @Transactional
     public Map<String, Object> vincularTicket(Long ticketId) {
 
         Optional<Bankroll> activeOpt = repository.findActiveBankroll();
@@ -112,7 +112,7 @@ public class BankrollServiceImpl implements BankrollService {
         Ticket ticket = tOpt.get();
 
         // Vincula à banca e seta como aplicado futuro
-        ticket.setBankrollId(b.getId());
+        ticket.setBankroll(b);
         ticket.setAppliedToBankroll(false);
         ticketRepo.save(ticket);
 

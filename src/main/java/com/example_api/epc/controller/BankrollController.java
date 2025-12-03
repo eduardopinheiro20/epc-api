@@ -31,12 +31,6 @@ public class BankrollController {
         return ResponseEntity.ok(service.reset());
     }
 
-    @PostMapping("/apply-ticket")
-    public ResponseEntity<?> applyTicket(@RequestBody Map<String,Object> req) {
-        Long ticketId = Long.parseLong(req.get("ticket_id").toString());
-        return ResponseEntity.ok(service.applyTicket(ticketId));
-    }
-
     @PostMapping("/link-ticket")
     public ResponseEntity<?> linkTicket(@RequestBody Map<String, Object> data) {
         Long ticketId = Long.parseLong(data.get("ticket_id").toString());

@@ -2,6 +2,9 @@ package com.example_api.epc.controller;
 
 import com.example_api.epc.client.IaClient;
 import com.example_api.epc.dto.TicketResponse;
+import com.example_api.epc.entity.Ticket;
+import com.example_api.epc.service.BankrollService;
+import com.example_api.epc.service.TicketProcessingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +18,15 @@ public class IaController {
 
     @Autowired
     private IaClient iaClient;
+
+    private final TicketProcessingService ticketService;
+
+    private final BankrollService bankrollService;
+
+    public IaController(final TicketProcessingService pTicketService, final BankrollService pBankrollService) {
+        ticketService = pTicketService;
+        bankrollService = pBankrollService;
+    }
 
     @GetMapping("/bilhete-do-dia")
     public ResponseEntity<?> melhorAposta() {
@@ -32,13 +44,13 @@ public class IaController {
 
     @PostMapping("/salvar")
     public ResponseEntity<?> salvarBilhete(@RequestBody Map<String, Object> body) {
-        Object ticket = body.get("ticket");
 
-        // resposta real do Python
-        Map<String, Object> result = iaClient.salvarNoPython(ticket);
+        Map<String, Object> ticketJson = (Map<String, Object>) body.get("ticket");
 
-        return ResponseEntity.ok(result);
+        Ticket saved = ticketService.saveAndLink(ticketJson);
+        return ResponseEntity.ok(saved);
     }
+
 
     @GetMapping("/historico-bilhetes")
     public ResponseEntity<?> historicoBilhetes(

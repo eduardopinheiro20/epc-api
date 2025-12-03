@@ -21,16 +21,28 @@ public class Fixture {
     @Column(name = "api_id")
     private Integer apiId;
 
-    @Column(name = "league_id")
-    private Integer leagueId;
+//    @Column(name = "league_id")
+//    private Integer leagueId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "league_id", insertable = false, updatable = false)
+    private League league;
 
     private LocalDateTime date;
 
-    @Column(name = "home_team_id")
-    private Integer homeTeamId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "home_team_id", insertable = false, updatable = false)
+    private Team homeTeam;
 
-    @Column(name = "away_team_id")
-    private Integer awayTeamId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "away_team_id", insertable = false, updatable = false)
+    private Team awayTeam;
+
+//    @Column(name = "home_team_id")
+//    private Integer homeTeamId;
+//
+//    @Column(name = "away_team_id")
+//    private Integer awayTeamId;
 
     private String status;
 
