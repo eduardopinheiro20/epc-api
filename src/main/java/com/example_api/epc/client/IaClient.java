@@ -60,19 +60,31 @@ public class IaClient {
                         .block();
     }
 
-    public Map<String, Object> getJogosHistoricos(String start, String end) {
+    public Map<String, Object> getJogosHistoricos(
+                    Integer page,
+                    Integer size,
+                    String team,
+                    String league,
+                    String start,
+                    String end,
+                    String sort
+    ) {
 
         return webClient.get()
                         .uri(uriBuilder -> uriBuilder
                                         .path("/jogos-historicos")
+                                        .queryParam("page", page)
+                                        .queryParam("size", size)
+                                        .queryParam("team", team)
+                                        .queryParam("league", league)
                                         .queryParam("start", start)
                                         .queryParam("end", end)
+                                        .queryParam("sort", sort)
                                         .build())
                         .retrieve()
                         .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                         .block();
     }
-
 
     public Map<String, Object> getBankroll() {
         return webClient.get()

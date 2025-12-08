@@ -43,7 +43,7 @@ public class BankrollServiceImpl implements BankrollService {
 
     @Override
     @Transactional
-    public Map<String,Object> create(double initial) {
+    public Map<String,Object>   create(double initial) {
         Optional<Bankroll> existing = repository.findActiveBankroll();
 
         if (existing.isPresent()) {

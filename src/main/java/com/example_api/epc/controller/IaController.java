@@ -82,12 +82,20 @@ public class IaController {
 
     @GetMapping("/jogos-historicos")
     public ResponseEntity<?> jogosHistoricos(
+                    @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
+                    @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
+                    @RequestParam(name = "team", required = false) String team,
+                    @RequestParam(name = "league", required = false) String league,
                     @RequestParam(name = "start", required = false) String start,
-                    @RequestParam(name = "end", required = false) String end
+                    @RequestParam(name = "end", required = false) String end,
+                    @RequestParam(name = "sort", required = false, defaultValue = "asc") String sort
     ) {
-        var result = iaClient.getJogosHistoricos(start, end);
-        return ResponseEntity.ok(result);
+
+        return ResponseEntity.ok(
+                        iaClient.getJogosHistoricos(page, size, team, league, start, end, sort)
+        );
     }
+
 
 }
 
