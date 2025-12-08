@@ -67,33 +67,6 @@ public class BankrollServiceImpl implements BankrollService {
         return Map.of("reset", true);
     }
 
-    // Aplicar (multiplicar) bilhete
-//    @Override
-//    @Transactional
-//    public Map<String, Object> applyTicket(Long ticketId) {
-//
-//        Optional<Bankroll> opt = repository.findActiveBankroll();
-//        Optional<Ticket> t = ticketRepo.findById(ticketId);
-//
-//        if (opt.isEmpty() || t.isEmpty()) {
-//            return Map.of("error", "Banca ou ticket inexistente");
-//        }
-//
-//        Bankroll b = opt.get();
-//        Ticket ticket = t.get();
-//
-//        // Marca que pertence à banca
-//        ticket.setAppliedToBankroll(true);
-//        ticket.setBankroll(b);
-//
-//        ticketRepo.save(ticket);
-//
-//        return Map.of(
-//                        "applied", true,
-//                        "bankroll", b
-//        );
-//    }
-
     @Override
     @Transactional
     public Map<String, Object> vincularTicket(Long ticketId) {
