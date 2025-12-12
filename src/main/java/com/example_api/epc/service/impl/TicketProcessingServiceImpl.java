@@ -240,7 +240,7 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
         int home = Optional.ofNullable(f.getHomeGoals()).orElse(0);
         int away = Optional.ofNullable(f.getAwayGoals()).orElse(0);
         int total = home + away;
-
+        String awayTeam = f.getAwayTeam().getName().toLowerCase();
         String market = sel.getMarket().toLowerCase();
 
         try {
@@ -255,9 +255,12 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
                 return total > limit;
             }
 
-            if (market.contains("away under")) {
-                double limit = Double.parseDouble(market.replace("away under", "").trim());
-                return away <= limit;
+            if (market.equals(awayTeam + " under 2.5")) {
+                return away <= 2.5;
+            }
+
+            if (market.equals(awayTeam + " under 3.5")) {
+                return away <= 3.5;
             }
 
             if (market.contains("handicap +")) {

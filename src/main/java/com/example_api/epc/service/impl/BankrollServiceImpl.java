@@ -103,5 +103,4 @@ public class BankrollServiceImpl implements BankrollService {
 
         return result;
     }
-
 }
