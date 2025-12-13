@@ -1,5 +1,6 @@
 package com.example_api.epc.controller;
 
+import com.example_api.epc.entity.Ticket;
 import com.example_api.epc.service.BankrollService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -42,5 +43,13 @@ public class BankrollController {
         Map<String, Object> result = service.validarAutomatico();
         return ResponseEntity.ok(result);
     }
+
+    @PostMapping("/cashout")
+    public ResponseEntity<?> cashout(@RequestBody Map<String, Object> body) {
+        double valor = Double.parseDouble(body.get("finalValue").toString());
+        return ResponseEntity.ok(service.cashout(valor));
+    }
+
+
 
 }

@@ -10,5 +10,5 @@ public interface TicketProcessingService {
 
     boolean processSingleTicket(Long ticket);
 
-    Ticket saveAndLink(Map<String, Object> pTicketJson);
+    Map<String, Object> saveAndLink(Map<String, Object> pTicketJson);
 }

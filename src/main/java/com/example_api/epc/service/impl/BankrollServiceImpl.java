@@ -11,6 +11,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -22,7 +24,7 @@ public class BankrollServiceImpl implements BankrollService {
     private BankrollRepository repository;
 
     @Autowired
-    private TicketRepository ticketRepo;
+    private TicketRepository ticketRepository;
 
     @Autowired
     private TicketProcessingService ticketProcessingService;
@@ -76,7 +78,7 @@ public class BankrollServiceImpl implements BankrollService {
             return Map.of("error", "Nenhuma banca ativa.");
         }
 
-        Optional<Ticket> tOpt = ticketRepo.findById(ticketId);
+        Optional<Ticket> tOpt = ticketRepository.findById(ticketId);
         if (tOpt.isEmpty()) {
             return Map.of("error", "Ticket não encontrado.");
         }
@@ -87,7 +89,7 @@ public class BankrollServiceImpl implements BankrollService {
         // Vincula à banca e seta como aplicado futuro
         ticket.setBankroll(b);
         ticket.setAppliedToBankroll(false);
-        ticketRepo.save(ticket);
+        ticketRepository.save(ticket);
 
         return Map.of("linked", true);
     }
@@ -103,4 +105,40 @@ public class BankrollServiceImpl implements BankrollService {
 
         return result;
     }
+
+    @Transactional
+    @Override
+    public Map<String, Object> cashout(double valorFinal) {
+        Map<String, Object> resp = new HashMap<>();
+
+        Ticket t = ticketRepository.findFirstByStatusOrderBySavedAtDesc("PENDING");
+
+        if (t == null) {
+            resp.put("success", false);
+            resp.put("message", "Nenhum bilhete pendente para cashout.");
+            return resp;
+        }
+
+        Bankroll b = repository.findByStatus("ACTIVE");
+
+        b.setCurrentAmount(valorFinal);
+        repository.save(b);
+
+        t.setStatus("FINISHED");
+        t.setResult("CASHOUT");
+
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("cashout_value", valorFinal);
+        meta.put("cashout_at", LocalDateTime.now().toString());
+        t.setMeta(meta.toString());
+
+        ticketRepository.save(t);
+
+        resp.put("success", true);
+        resp.put("message", "Cashout realizado com sucesso.");
+        resp.put("newBalance", b.getCurrentAmount());
+
+        return resp;
+    }
+
 }

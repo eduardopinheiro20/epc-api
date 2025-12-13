@@ -32,7 +32,7 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
 
     @Override
     @Transactional
-    public Ticket saveAndLink(Map<String, Object> json) {
+    public Map<String, Object> saveAndLink(Map<String, Object> json) {
 
         try {
             // ------------------------------
@@ -106,7 +106,10 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
             // Verificar duplicata (assuma que exista findBySignature)
             Ticket dupe = ticketRepository.findBySignature(signature);
             if (dupe != null) {
-                return dupe; // retorna bilhete existente
+                Map<String, Object> resp = new HashMap<>();
+                resp.put("alreadyExists", true);
+                resp.put("ticket", dupe);
+                return resp;
             }
 
             // ------------------------------
@@ -135,7 +138,11 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
                 selectionRepository.save(ts);
             }
 
-            return t;
+            // ✅ RETORNO PADRÃO
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("alreadyExists", false);
+            resp.put("ticket", t);
+            return resp;
 
         } catch (Exception e) {
             // logue o erro (use seu logger)

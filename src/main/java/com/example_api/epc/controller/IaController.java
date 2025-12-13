@@ -44,12 +44,11 @@ public class IaController {
 
     @PostMapping("/salvar")
     public ResponseEntity<?> salvarBilhete(@RequestBody Map<String, Object> body) {
-
         Map<String, Object> ticketJson = (Map<String, Object>) body.get("ticket");
-
-        Ticket saved = ticketService.saveAndLink(ticketJson);
-        return ResponseEntity.ok(saved);
+        Map<String, Object> result = ticketService.saveAndLink(ticketJson);
+        return ResponseEntity.ok(result);
     }
+
 
 
     @GetMapping("/historico-bilhetes")
