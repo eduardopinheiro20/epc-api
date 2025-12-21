@@ -1,6 +1,6 @@
 package com.example_api.epc.service;
 
-import com.example_api.epc.entity.Ticket;
+import com.example_api.epc.entity.Bankroll;
 
 import java.util.Map;
 
@@ -17,4 +17,6 @@ public interface BankrollService {
     Map<String, Object> validarAutomatico();
 
     Map<String, Object>  cashout(double valorFinal);
+
+    Bankroll getActiveBankroll();
 }

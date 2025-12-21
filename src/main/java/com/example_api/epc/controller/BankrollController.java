@@ -1,11 +1,14 @@
 package com.example_api.epc.controller;
 
+import com.example_api.epc.entity.Bankroll;
 import com.example_api.epc.entity.Ticket;
 import com.example_api.epc.service.BankrollService;
+import com.example_api.epc.service.TicketProcessingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -15,6 +18,12 @@ public class BankrollController {
 
     @Autowired
     private BankrollService service;
+
+    @Autowired
+    private TicketProcessingService ticketService;
+
+    @Autowired
+    private BankrollService bankrollService;
 
     @GetMapping
     public ResponseEntity<?> getCurrent() {
@@ -48,6 +57,46 @@ public class BankrollController {
     public ResponseEntity<?> cashout(@RequestBody Map<String, Object> body) {
         double valor = Double.parseDouble(body.get("finalValue").toString());
         return ResponseEntity.ok(service.cashout(valor));
+    }
+
+
+    @GetMapping("/historico-bilhetes")
+    public ResponseEntity<?> historicoBilhetes(
+                    @RequestParam(name = "page", defaultValue = "1") int page,
+                    @RequestParam(name = "size", defaultValue = "20") int size,
+                    @RequestParam(name = "start", required = false) String start,
+                    @RequestParam(name = "end", required = false) String end
+    ) {
+
+        Bankroll active = bankrollService.getActiveBankroll();
+
+        if (active == null) {
+            return ResponseEntity.ok(
+                            Map.of(
+                                            "items", List.of(),
+                                            "page", page,
+                                            "pages", 0,
+                                            "msg", "Nenhuma banca ativa"
+                            )
+            );
+        }
+
+        var pageResult = ticketService.getHistoricoPorBankroll(
+                        active.getId(),
+                        page,
+                        size,
+                        start,
+                        end
+        );
+
+        return ResponseEntity.ok(
+                        Map.of(
+                            "items", pageResult.getContent(),
+                            "page", page,
+                            "pages", pageResult.getTotalPages()
+                        )
+        );
+
     }
 
 

@@ -1,10 +1,13 @@
 package com.example_api.epc.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,6 +18,14 @@ public class Ticket {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @OneToMany(
+                    mappedBy = "ticket",
+                    cascade = CascadeType.ALL,
+                    fetch = FetchType.LAZY
+    )
+    @JsonManagedReference
+    private List<TicketSelection> selections = new ArrayList<>();
 
     // quem criou (opcional)
     @Column(name = "created_by")
@@ -51,6 +62,7 @@ public class Ticket {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
 
     // ---------- lifecycle callbacks ----------
     @PrePersist

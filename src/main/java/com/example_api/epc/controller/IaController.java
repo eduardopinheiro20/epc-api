@@ -2,7 +2,6 @@ package com.example_api.epc.controller;
 
 import com.example_api.epc.client.IaClient;
 import com.example_api.epc.dto.TicketResponse;
-import com.example_api.epc.entity.Ticket;
 import com.example_api.epc.service.BankrollService;
 import com.example_api.epc.service.TicketProcessingService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,25 +45,6 @@ public class IaController {
     public ResponseEntity<?> salvarBilhete(@RequestBody Map<String, Object> body) {
         Map<String, Object> ticketJson = (Map<String, Object>) body.get("ticket");
         Map<String, Object> result = ticketService.saveAndLink(ticketJson);
-        return ResponseEntity.ok(result);
-    }
-
-
-
-    @GetMapping("/historico-bilhetes")
-    public ResponseEntity<?> historicoBilhetes(
-                    @RequestParam(name = "page", defaultValue = "1") int page,
-                    @RequestParam(name = "size", defaultValue = "20") int size,
-                    @RequestParam(name = "start", required = false) String start,
-                    @RequestParam(name = "end", required = false) String end
-    ) {
-
-        if (start != null && start.isBlank())
-            start = null;
-        if (end != null && end.isBlank())
-            end = null;
-
-        var result = iaClient.getHistoricoBilhetes(page, size, start, end);
         return ResponseEntity.ok(result);
     }
 

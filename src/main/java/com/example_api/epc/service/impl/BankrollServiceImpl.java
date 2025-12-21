@@ -141,4 +141,9 @@ public class BankrollServiceImpl implements BankrollService {
         return resp;
     }
 
+    @Override
+    public Bankroll getActiveBankroll() {
+        return repository.findFirstByStatus("ACTIVE").orElse(null);
+    }
+
 }

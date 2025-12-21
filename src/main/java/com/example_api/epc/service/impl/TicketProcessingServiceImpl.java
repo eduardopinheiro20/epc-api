@@ -13,13 +13,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +35,7 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
     private final TicketSelectionRepository selectionRepository;
     private final FixtureRepository fixtureRepository;
     private final BankrollRepository bankrollRepository;
+    private final TicketSelectionRepository ticketSelectionRepository;
 
     @Override
     @Transactional
@@ -151,6 +158,70 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
         }
     }
 
+    public Page<Ticket> getHistoricoPorBankroll(
+                    Long bankrollId,
+                    int page,
+                    int size,
+                    String start,
+                    String end
+    ) {
+
+        Pageable pageable = PageRequest.of(
+                        Math.max(page - 1, 0),
+                        size,
+                        Sort.by("savedAt").descending()
+        );
+
+        LocalDateTime startDt = null;
+        LocalDateTime endDt = null;
+
+        if (start != null && !start.isBlank()) {
+            startDt = LocalDate.parse(start).atStartOfDay();
+        }
+        if (end != null && !end.isBlank()) {
+            endDt = LocalDate.parse(end).atTime(23, 59, 59);
+        }
+
+        Page<Ticket> pageTickets;
+
+        if (startDt == null && endDt == null) {
+            pageTickets = ticketRepository.findByBankrollId(bankrollId, pageable);
+        } else if (startDt != null && endDt == null) {
+            pageTickets = ticketRepository.findByBankrollIdAndSavedAtGreaterThanEqual(
+                            bankrollId, startDt, pageable
+            );
+        } else if (startDt == null) {
+            pageTickets = ticketRepository.findByBankrollIdAndSavedAtLessThanEqual(
+                            bankrollId, endDt, pageable
+            );
+        } else {
+            pageTickets = ticketRepository.findByBankrollIdAndSavedAtBetween(
+                            bankrollId, startDt, endDt, pageable
+            );
+        }
+
+        // 🔥 AQUI está o pulo do gato
+        List<Long> ticketIds = pageTickets
+                        .getContent()
+                        .stream()
+                        .map(Ticket::getId)
+                        .toList();
+
+        if (!ticketIds.isEmpty()) {
+            List<TicketSelection> selections =
+                            ticketSelectionRepository.findByTicketIdIn(ticketIds);
+
+            Map<Long, List<TicketSelection>> map =
+                            selections.stream()
+                                            .collect(Collectors.groupingBy(TicketSelection::getTicketId));
+
+            pageTickets.getContent().forEach(t ->
+                            t.setSelections(map.getOrDefault(t.getId(), List.of()))
+            );
+        }
+
+        return pageTickets;
+    }
 
     @Override
     @Transactional
