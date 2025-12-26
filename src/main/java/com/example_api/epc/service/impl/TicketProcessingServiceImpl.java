@@ -231,6 +231,11 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
 
         List<Ticket> pendentes = ticketRepository.findByStatus("PENDING");
 
+        if (pendentes.isEmpty()) {
+            result.put("noPendingTickets", true);
+            return result;
+        }
+
         int total = pendentes.size();
         int processados = 0;
         int ignorados = 0;
@@ -305,7 +310,6 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
 
         return true;
     }
-
 
     private boolean isFixtureFinished(String status) {
         if (status == null) return false;
@@ -385,6 +389,31 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
         }
 
         bankrollRepository.save(b);
+    }
+
+
+    @Override
+    public Page<Ticket> getHistoricoCompleto(
+                    int page,
+                    int size,
+                    String start,
+                    String end
+    ) {
+        Pageable pageable = PageRequest.of(
+                        page - 1, size, Sort.by("savedAt").descending()
+        );
+
+        LocalDateTime startDt = (start != null && !start.isBlank())
+                        ? LocalDate.parse(start).atStartOfDay()
+                        : null;
+
+        LocalDateTime endDt = (end != null && !end.isBlank())
+                        ? LocalDate.parse(end).atTime(23, 59, 59)
+                        : null;
+
+        return ticketRepository.findAllWithFilters(
+                        startDt, endDt, pageable
+        );
     }
 
 

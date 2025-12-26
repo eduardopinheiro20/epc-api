@@ -1,5 +1,6 @@
 package com.example_api.epc.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -51,6 +52,7 @@ public class Ticket {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bankroll_id")
+    @JsonIgnore
     private Bankroll bankroll;
 
     // meta como JSON serializado (string)

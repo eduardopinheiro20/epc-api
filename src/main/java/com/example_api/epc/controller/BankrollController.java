@@ -65,8 +65,23 @@ public class BankrollController {
                     @RequestParam(name = "page", defaultValue = "1") int page,
                     @RequestParam(name = "size", defaultValue = "20") int size,
                     @RequestParam(name = "start", required = false) String start,
-                    @RequestParam(name = "end", required = false) String end
+                    @RequestParam(name = "end", required = false) String end,
+                    @RequestParam(name = "all", defaultValue = "false") boolean all
     ) {
+
+        if (all) {
+            var result = ticketService.getHistoricoCompleto(
+                            page, size, start, end
+            );
+
+            return ResponseEntity.ok(
+                            Map.of(
+                                    "items", result.getContent(),
+                                    "page", page,
+                                    "pages", result.getTotalPages()
+                            )
+            );
+        }
 
         Bankroll active = bankrollService.getActiveBankroll();
 
@@ -98,7 +113,5 @@ public class BankrollController {
         );
 
     }
-
-
 
 }

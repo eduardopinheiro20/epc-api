@@ -14,4 +14,6 @@ public interface TicketProcessingService {
     Map<String, Object> saveAndLink(Map<String, Object> pTicketJson);
 
     Page<Ticket> getHistoricoPorBankroll(Long pId, int pPage, int pSize, String pStart, String pEnd);
+
+    Page<Ticket>  getHistoricoCompleto(int pPage, int pSize, String pStart, String pEnd);
 }

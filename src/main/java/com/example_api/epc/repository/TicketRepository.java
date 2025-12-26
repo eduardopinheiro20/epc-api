@@ -46,40 +46,15 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     @Query("""
         SELECT t FROM Ticket t
-        WHERE t.bankroll.id = :bankrollId
-          AND (:start IS NULL OR t.savedAt >= :start)
-          AND (:end IS NULL OR t.savedAt <= :end)
+        WHERE t.savedAt >= COALESCE(:start, t.savedAt)
+          AND t.savedAt <= COALESCE(:end, t.savedAt)
     """)
-    Page<Ticket> findByBankrollWithFilters(
-                    @Param("bankrollId") Long bankrollId,
+    Page<Ticket> findAllWithFilters(
                     @Param("start") LocalDateTime start,
                     @Param("end") LocalDateTime end,
                     Pageable pageable
     );
 
-    @Query("""
-        SELECT t FROM Ticket t
-        LEFT JOIN FETCH t.selections
-        WHERE t.bankroll.id = :bankrollId
-    """)
-        Page<Ticket> findByBankrollWithSelections(
-                    @Param("bankrollId") Long bankrollId,
-                    Pageable pageable
-    );
-
-    @Query("""
-        SELECT DISTINCT t FROM Ticket t
-        LEFT JOIN FETCH t.selections
-        WHERE t.bankroll.id = :bankrollId
-          AND (:start IS NULL OR t.savedAt >= :start)
-          AND (:end IS NULL OR t.savedAt <= :end)
-    """)
-    Page<Ticket> findByBankrollWithSelectionsAndFilters(
-                    Long bankrollId,
-                    LocalDateTime start,
-                    LocalDateTime end,
-                    Pageable pageable
-    );
 
 
 }
