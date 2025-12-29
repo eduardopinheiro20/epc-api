@@ -1,10 +1,12 @@
 package com.example_api.epc.service.impl;
 
+import com.example_api.epc.dto.BankrollDto;
 import com.example_api.epc.entity.Bankroll;
 import com.example_api.epc.entity.Ticket;
 import com.example_api.epc.repository.BankrollRepository;
 import com.example_api.epc.repository.TicketRepository;
 import com.example_api.epc.service.BankrollService;
+import com.example_api.epc.service.IaTrainingService;
 import com.example_api.epc.service.TicketProcessingService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -28,6 +30,9 @@ public class BankrollServiceImpl implements BankrollService {
 
     @Autowired
     private TicketProcessingService ticketProcessingService;
+
+    @Autowired
+    private IaTrainingService iaTrainingService;
 
     @Override
     public Map<String,Object> getCurrent() {
@@ -99,9 +104,23 @@ public class BankrollServiceImpl implements BankrollService {
         // PROCESSA OS BILHETES PENDENTES
         Map<String, Object> result = ticketProcessingService.processPendingTickets();
 
+        iaTrainingService.retrain();
+
         // Retorna a banca atualizada
         Bankroll active = repository.findByStatus("ACTIVE");
-        result.put("bankroll", active);
+
+        result.put("bankroll", active);    if (active != null) {
+            BankrollDto dto = new BankrollDto(
+                    active.getName(),
+                    active.getInitialAmount(),
+                    active.getCurrentAmount(),
+                    active.getStatus(),
+                    active.getCreatedAt(),
+                    active.getUpdatedAt()
+            );
+
+            result.put("bankroll", dto);
+        }
 
         return result;
     }

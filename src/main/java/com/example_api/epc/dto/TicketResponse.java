@@ -1,12 +1,20 @@
 package com.example_api.epc.dto;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.util.Map;
-
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TicketResponse {
 
-    private boolean found;
-    private Map<String, Object> ticket;
+    private Boolean found;
+    private String reason;
+    private String message;
+    private IaTicketDto ticket;
 }

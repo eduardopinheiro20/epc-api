@@ -31,14 +31,7 @@ public class IaController {
     public ResponseEntity<?> melhorAposta() {
 
         TicketResponse response = iaClient.getBilheteDoDia();
-
-        if (!response.isFound()) {
-            return ResponseEntity.ok(Map.of("found", false, "msg", "Nenhuma aposta encontrada hoje")
-            );
-        }
-
-        return ResponseEntity.ok(Map.of("found", true, "ticket", response.getTicket())
-        );
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/salvar")
