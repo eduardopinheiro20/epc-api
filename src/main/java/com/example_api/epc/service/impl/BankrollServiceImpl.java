@@ -3,8 +3,11 @@ package com.example_api.epc.service.impl;
 import com.example_api.epc.dto.BankrollDto;
 import com.example_api.epc.entity.Bankroll;
 import com.example_api.epc.entity.Ticket;
+import com.example_api.epc.entity.User;
+import com.example_api.epc.mapper.BankrollMapper;
 import com.example_api.epc.repository.BankrollRepository;
 import com.example_api.epc.repository.TicketRepository;
+import com.example_api.epc.service.AuthenticatedUserService;
 import com.example_api.epc.service.BankrollService;
 import com.example_api.epc.service.IaTrainingService;
 import com.example_api.epc.service.TicketProcessingService;
@@ -34,24 +37,47 @@ public class BankrollServiceImpl implements BankrollService {
     @Autowired
     private IaTrainingService iaTrainingService;
 
+    @Autowired
+    private AuthenticatedUserService authUserService;
+
     @Override
-    public Map<String,Object> getCurrent() {
-        Optional<Bankroll> active = repository.findActiveBankroll();
+    public Map<String, Object> getCurrent() {
+
+        User user = authUserService.getCurrentUser();
+
+        Optional<Bankroll> active =
+                        repository.findByUserAndStatus(user, "ACTIVE");
 
         if (active.isEmpty()) {
             return Map.of("exists", false);
         }
 
+        Bankroll b = active.get();
+
+        BankrollDto dto = new BankrollDto(
+                        b.getId(),
+                        b.getName(),
+                        b.getInitialAmount(),
+                        b.getCurrentAmount(),
+                        b.getStatus(),
+                        b.getCreatedAt(),
+                        b.getUpdatedAt()
+        );
+
         return Map.of(
                         "exists", true,
-                        "bankroll", active.get()
+                        "bankroll", dto
         );
     }
 
+
     @Override
     @Transactional
-    public Map<String,Object>   create(double initial) {
-        Optional<Bankroll> existing = repository.findActiveBankroll();
+    public Map<String,Object> create(double initial) {
+
+        User user = authUserService.getCurrentUser();
+        Optional<Bankroll> existing =
+                        repository.findByUserAndStatus(user, "ACTIVE");
 
         if (existing.isPresent()) {
             return Map.of("error", "Já existe banca ativa.");
@@ -61,10 +87,11 @@ public class BankrollServiceImpl implements BankrollService {
         b.setInitialAmount(initial);
         b.setCurrentAmount(initial);
         b.setStatus("ACTIVE");
+        b.setUser(user);
 
-        repository.save(b);
+        Bankroll bankrollSaved = repository.save(b);
 
-        return Map.of("created", true, "bankroll", b);
+        return Map.of("created", true, "bankroll", BankrollMapper.toDto(bankrollSaved));
     }
 
     @Override
@@ -110,7 +137,7 @@ public class BankrollServiceImpl implements BankrollService {
         Bankroll active = repository.findByStatus("ACTIVE");
 
         result.put("bankroll", active);    if (active != null) {
-            BankrollDto dto = new BankrollDto(
+            BankrollDto dto = new BankrollDto(active.getId(),
                     active.getName(),
                     active.getInitialAmount(),
                     active.getCurrentAmount(),
@@ -161,8 +188,8 @@ public class BankrollServiceImpl implements BankrollService {
     }
 
     @Override
-    public Bankroll getActiveBankroll() {
-        return repository.findFirstByStatus("ACTIVE").orElse(null);
+    public Bankroll getActiveBankroll(User pUser) {
+        return repository.findByUserAndStatus(pUser,"ACTIVE").orElse(null);
     }
 
 }

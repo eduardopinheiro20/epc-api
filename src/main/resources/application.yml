@@ -15,5 +15,10 @@ spring:
     properties:
       hibernate.format_sql: true
 
+security:
+  jwt:
+    secret: epcIA_9f2d8c6b1e4a7d3c9f0e2b5a8d7c6e4f1b9a
+    expiration: 86400000
+
 ia:
   base-url: http://localhost:8000

@@ -3,12 +3,9 @@ package com.example_api.epc.controller;
 import com.example_api.epc.client.IaClient;
 import com.example_api.epc.dto.TicketResponse;
 import com.example_api.epc.service.BankrollService;
-import com.example_api.epc.service.TicketProcessingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ia")
@@ -18,12 +15,9 @@ public class IaController {
     @Autowired
     private IaClient iaClient;
 
-    private final TicketProcessingService ticketService;
-
     private final BankrollService bankrollService;
 
-    public IaController(final TicketProcessingService pTicketService, final BankrollService pBankrollService) {
-        ticketService = pTicketService;
+    public IaController(final BankrollService pBankrollService) {
         bankrollService = pBankrollService;
     }
 
@@ -32,13 +26,6 @@ public class IaController {
 
         TicketResponse response = iaClient.getBilheteDoDia();
         return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/salvar")
-    public ResponseEntity<?> salvarBilhete(@RequestBody Map<String, Object> body) {
-        Map<String, Object> ticketJson = (Map<String, Object>) body.get("ticket");
-        Map<String, Object> result = ticketService.saveAndLink(ticketJson);
-        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/processar-bilhetes")

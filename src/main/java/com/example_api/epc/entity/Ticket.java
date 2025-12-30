@@ -65,6 +65,9 @@ public class Ticket {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     // ---------- lifecycle callbacks ----------
     @PrePersist

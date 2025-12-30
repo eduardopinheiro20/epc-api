@@ -15,5 +15,5 @@ public interface TicketProcessingService {
 
     Page<Ticket> getHistoricoPorBankroll(Long pId, int pPage, int pSize, String pStart, String pEnd);
 
-    Page<Ticket>  getHistoricoCompleto(int pPage, int pSize, String pStart, String pEnd);
+    Page<Ticket> getHistoricoCompletoPorUsuario(Long pId, int pPage, int pSize, String pStart, String pEnd);
 }

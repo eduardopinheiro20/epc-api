@@ -1,13 +1,11 @@
 package com.example_api.epc.service.impl;
 
-import com.example_api.epc.entity.Bankroll;
-import com.example_api.epc.entity.Fixture;
-import com.example_api.epc.entity.Ticket;
-import com.example_api.epc.entity.TicketSelection;
+import com.example_api.epc.entity.*;
 import com.example_api.epc.repository.BankrollRepository;
 import com.example_api.epc.repository.FixtureRepository;
 import com.example_api.epc.repository.TicketRepository;
 import com.example_api.epc.repository.TicketSelectionRepository;
+import com.example_api.epc.service.AuthenticatedUserService;
 import com.example_api.epc.service.TicketProcessingService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TicketProcessingServiceImpl implements TicketProcessingService {
 
+    private final AuthenticatedUserService authUserService;
     private final TicketRepository ticketRepository;
     private final TicketSelectionRepository selectionRepository;
     private final FixtureRepository fixtureRepository;
@@ -41,11 +40,13 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
     @Transactional
     public Map<String, Object> saveAndLink(Map<String, Object> json) {
 
+        User user = authUserService.getCurrentUser();
+
         try {
             // ------------------------------
             // Get Banca Ativa
             // ------------------------------
-            Optional<Bankroll> opt = bankrollRepository.findActiveBankroll();
+            Optional<Bankroll> opt = bankrollRepository.findByUserAndStatus(user, "ACTIVE");
 
             // ------------------------------
             // 1) MONTAR O TICKET
@@ -55,6 +56,7 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
             t.setSavedAt(LocalDateTime.now());
             t.setStatus("PENDING");
             t.setResult(null);
+            t.setUser(user);
 
             if (opt.isPresent()) {
                 Bankroll bankroll = opt.get();
@@ -391,9 +393,8 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
         bankrollRepository.save(b);
     }
 
-
     @Override
-    public Page<Ticket> getHistoricoCompleto(
+    public Page<Ticket> getHistoricoCompletoPorUsuario(Long userId,
                     int page,
                     int size,
                     String start,
@@ -411,11 +412,10 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
                         ? LocalDate.parse(end).atTime(23, 59, 59)
                         : null;
 
-        return ticketRepository.findAllWithFilters(
+        return ticketRepository.findByUserIdWithFilters(userId,
                         startDt, endDt, pageable
         );
     }
-
 
 }
 

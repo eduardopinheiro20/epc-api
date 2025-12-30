@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class BankrollDto {
 
-
+    private Long id;
     private String name;
     private double initialAmount;
     private double currentAmount;

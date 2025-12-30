@@ -1,6 +1,7 @@
 package com.example_api.epc.repository;
 
 import com.example_api.epc.entity.Bankroll;
+import com.example_api.epc.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -17,4 +18,6 @@ public interface BankrollRepository extends JpaRepository<Bankroll, Long> {
     Optional<Bankroll> findFirstByStatus(String status);
 
     Bankroll findByStatus(String status);
+
+    Optional<Bankroll> findByUserAndStatus(User pUser, String pACTIVE);
 }

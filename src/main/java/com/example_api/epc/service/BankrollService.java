@@ -1,6 +1,7 @@
 package com.example_api.epc.service;
 
 import com.example_api.epc.entity.Bankroll;
+import com.example_api.epc.entity.User;
 
 import java.util.Map;
 
@@ -18,5 +19,5 @@ public interface BankrollService {
 
     Map<String, Object>  cashout(double valorFinal);
 
-    Bankroll getActiveBankroll();
+    Bankroll getActiveBankroll(User pUser);
 }
