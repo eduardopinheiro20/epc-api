@@ -9,5 +9,4 @@ public interface TicketSelectionRepository extends JpaRepository<TicketSelection
     List<TicketSelection> findByTicketId(Long ticketId);
 
     List<TicketSelection> findByTicketIdIn(List<Long> ticketIds);
-
 }

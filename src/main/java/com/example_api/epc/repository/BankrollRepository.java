@@ -14,9 +14,6 @@ public interface BankrollRepository extends JpaRepository<Bankroll, Long> {
 
     Optional<Bankroll> findById(Long id);
 
-    // Buscar banca ativa (se existir uma única)
-    Optional<Bankroll> findFirstByStatus(String status);
-
     Bankroll findByStatus(String status);
 
     Optional<Bankroll> findByUserAndStatus(User pUser, String pACTIVE);

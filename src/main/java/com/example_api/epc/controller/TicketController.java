@@ -72,11 +72,11 @@ public class TicketController {
 
         if (active == null) {
             return ResponseEntity.ok(
-                            Map.of(
-                                            "items", List.of(),
-                                            "page", page,
-                                            "pages", 0,
-                                            "msg", "Nenhuma banca ativa"
+                        Map.of(
+                                    "items", List.of(),
+                                    "page", page,
+                                    "pages", 0,
+                                    "msg", "Nenhuma banca ativa"
                             )
             );
         }

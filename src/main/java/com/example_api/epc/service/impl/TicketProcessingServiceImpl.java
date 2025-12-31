@@ -1,5 +1,7 @@
 package com.example_api.epc.service.impl;
 
+import com.example_api.epc.dto.TicketSavedDto;
+import com.example_api.epc.dto.TicketSelectionDto;
 import com.example_api.epc.entity.*;
 import com.example_api.epc.repository.BankrollRepository;
 import com.example_api.epc.repository.FixtureRepository;
@@ -147,10 +149,30 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
                 selectionRepository.save(ts);
             }
 
-            // ✅ RETORNO PADRÃO
+            // após salvar seleções
+            List<TicketSelectionDto> selectionDtos = selections.stream()
+                            .map(s -> new TicketSelectionDto(
+                                            s.get("fixture_id") != null ? Long.valueOf(s.get("fixture_id").toString()) : null,
+                                            Objects.toString(s.get("market"), null),
+                                            s.get("odd") != null ? Double.parseDouble(s.get("odd").toString()) : null,
+                                            s.get("prob") != null ? Double.parseDouble(s.get("prob").toString()) : null,
+                                            Objects.toString(s.get("home"), null),
+                                            Objects.toString(s.get("away"), null)
+                            ))
+                            .toList();
+
+            TicketSavedDto dto = new TicketSavedDto(
+                            t.getId(),
+                            t.getStatus(),
+                            t.getFinalOdd(),
+                            t.getCombinedProb(),
+                            t.getAppliedToBankroll(),
+                            selectionDtos
+            );
+
             Map<String, Object> resp = new HashMap<>();
             resp.put("alreadyExists", false);
-            resp.put("ticket", t);
+            resp.put("ticket", dto);
             return resp;
 
         } catch (Exception e) {
