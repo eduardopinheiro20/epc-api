@@ -127,26 +127,45 @@ public class BankrollServiceImpl implements BankrollService {
     }
 
     @Override
+    @Transactional
     public Map<String, Object> validarAutomatico() {
-        // PROCESSA OS BILHETES PENDENTES
-        Map<String, Object> result = ticketProcessingService.processPendingTickets();
+
+        User user = authUserService.getCurrentUser();
+        long count = ticketRepository.countProcessableTickets(user);
+
+        // NADA PARA PROCESSAR
+        if (count == 0) {
+            return Map.of(
+                            "updated", false,
+                            "reason", "NO_FINALIZED_GAMES",
+                            "message", "Não é possível atualizar a banca. Nenhum jogo finalizado ou dados ainda não coletados."
+            );
+        }
+
+        Map<String, Object> result =
+                        ticketProcessingService.processPendingTickets();
 
         iaTrainingService.retrain();
 
-        // Retorna a banca atualizada
-        Bankroll active = repository.findByStatus("ACTIVE");
+        Optional<Bankroll> activeOpt =
+                        repository.findByUserAndStatus(user, "ACTIVE");
 
-        result.put("bankroll", active);    if (active != null) {
-            BankrollDto dto = new BankrollDto(active.getId(),
-                    active.getName(),
-                    active.getInitialAmount(),
-                    active.getCurrentAmount(),
-                    active.getStatus(),
-                    active.getCreatedAt(),
-                    active.getUpdatedAt()
+        if (activeOpt.isPresent()) {
+            Bankroll active = activeOpt.get();
+
+            BankrollDto dto = new BankrollDto(
+                            active.getId(),
+                            active.getName(),
+                            active.getInitialAmount(),
+                            active.getCurrentAmount(),
+                            active.getStatus(),
+                            active.getCreatedAt(),
+                            active.getUpdatedAt()
             );
 
             result.put("bankroll", dto);
+        } else {
+            result.put("bankroll", null);
         }
 
         return result;
