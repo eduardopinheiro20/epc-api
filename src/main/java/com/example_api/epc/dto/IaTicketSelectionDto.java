@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Setter
@@ -19,8 +19,24 @@ public class IaTicketSelectionDto {
     private String away;
 
     private String market;
+
+    @JsonProperty("market_code")
+    private String marketCode;
+
+    @JsonProperty("market_group")
+    private String marketGroup;
+
     private Double odd;
     private Double prob;
 
-    private LocalDateTime date;
+    private OffsetDateTime date;
+
+    @JsonProperty("odd_source")
+    private String oddSource;
+
+    @JsonProperty("odd_captured_at")
+    private OffsetDateTime oddCapturedAt;
+
+    @JsonProperty("analysis_quality")
+    private Double analysisQuality;
 }

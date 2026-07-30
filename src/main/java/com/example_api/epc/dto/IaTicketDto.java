@@ -18,6 +18,9 @@ public class IaTicketDto {
     @JsonProperty("final_odd")
     private Double finalOdd;
 
+    @JsonProperty("target_odd_max")
+    private Double targetOddMax;
+
     @JsonProperty("combined_prob")
     private Double combinedProb;
 
@@ -33,5 +36,12 @@ public class IaTicketDto {
     private Integer mode;
 
     private List<IaTicketSelectionDto> selections;
-}
 
+    private List<String> explanation;
+
+    @JsonProperty("geometric_confidence")
+    private Double geometricConfidence;
+
+    @JsonProperty("odd_source")
+    private String oddSource;
+}

@@ -1,6 +1,7 @@
 package com.example_api.epc.client;
 
 import com.example_api.epc.dto.TicketResponse;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -12,10 +13,8 @@ public class IaClient {
 
     private final WebClient webClient;
 
-    public IaClient() {
-        this.webClient = WebClient.builder()
-                        .baseUrl("http://localhost:8000")
-                        .build();
+    public IaClient(@Qualifier("iaWebClient") WebClient webClient) {
+        this.webClient = webClient;
     }
 
     // chama o endpoint FASTAPI
@@ -34,6 +33,15 @@ public class IaClient {
                         .bodyValue(Map.of("ticket", ticket))
                         .retrieve()
                         .bodyToMono(Map.class)
+                        .block();
+    }
+
+    public Map<String, Object> salvarOddsBetano(Map<String, Object> body) {
+        return webClient.post()
+                        .uri("/odds-betano")
+                        .bodyValue(body)
+                        .retrieve()
+                        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                         .block();
     }
 

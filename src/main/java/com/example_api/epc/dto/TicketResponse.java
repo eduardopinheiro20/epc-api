@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+import java.util.Map;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -17,4 +20,9 @@ public class TicketResponse {
     private String reason;
     private String message;
     private IaTicketDto ticket;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("odds_required")
+    private List<Map<String, Object>> oddsRequired;
+
+    private Map<String, Object> diagnostics;
 }

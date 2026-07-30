@@ -20,6 +20,13 @@ public class GlobalExceptionHandler {
                         ));
     }
 
+    @ExceptionHandler(SpreadsheetImportException.class)
+    public ResponseEntity<?> handleSpreadsheetImport(SpreadsheetImportException ex) {
+        return ResponseEntity
+                        .status(HttpStatus.UNPROCESSABLE_ENTITY)
+                        .body(ex.getResponse());
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<?> handleGeneric(RuntimeException ex) {
         return ResponseEntity

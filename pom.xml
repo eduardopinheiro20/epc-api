@@ -87,6 +87,13 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- Importação das planilhas .xlsx -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.5.1</version>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -111,7 +118,7 @@
                 </configuration>
             </plugin>
 
-            <!-- SPRING BOOT PLUGIN CORRETO 🚨 -->
+            <!-- SPRING BOOT PLUGIN CORRETO -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

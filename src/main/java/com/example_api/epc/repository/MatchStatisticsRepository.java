@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MatchStatisticsRepository extends JpaRepository<MatchStatistics, Long> {
-    MatchStatistics findByFixtureIdAndTeamId(Long fixtureId, Long teamId);
+    MatchStatistics findFirstByFixtureIdAndTeamId(Long fixtureId, Long teamId);
 }

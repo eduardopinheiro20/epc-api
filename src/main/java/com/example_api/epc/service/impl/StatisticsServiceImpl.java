@@ -37,7 +37,7 @@ public class StatisticsServiceImpl implements StatisticsService {
 
             // HOME
             Team home = f.getHomeTeam();
-            MatchStatistics homeStats = statsRepo.findByFixtureIdAndTeamId(
+            MatchStatistics homeStats = statsRepo.findFirstByFixtureIdAndTeamId(
                             f.getId(),
                             home.getId()
             );
@@ -49,7 +49,7 @@ public class StatisticsServiceImpl implements StatisticsService {
 
             // AWAY
             Team away = f.getAwayTeam();
-            MatchStatistics awayStats = statsRepo.findByFixtureIdAndTeamId(
+            MatchStatistics awayStats = statsRepo.findFirstByFixtureIdAndTeamId(
                             f.getId(),
                             away.getId()
             );

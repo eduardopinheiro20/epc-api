@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -92,14 +93,34 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> selections = (List<Map<String, Object>>) json.getOrDefault("selections", Collections.emptyList());
 
-            // SERIALIZAR SELEÇÕES para assinatura
+            // SERIALIZAR somente a identidade estável das seleções.
+            // Explicação e horário de captura da odd não podem criar duplicata.
+            List<Map<String, Object>> signatureSelections = selections.stream()
+                            .map(selection -> {
+                                Map<String, Object> item = new HashMap<>();
+                                item.put("fixture_id", selection.get("fixture_id"));
+                                item.put(
+                                                "market_code",
+                                                selection.get("market_code") != null
+                                                                ? selection.get("market_code")
+                                                                : selection.get("market")
+                                );
+                                return item;
+                            })
+                            .sorted(Comparator.comparing(item ->
+                                            Objects.toString(item.get("fixture_id"), "")
+                                                            + "|"
+                                                            + Objects.toString(item.get("market_code"), "")
+                            ))
+                            .toList();
+
             String signatureRaw;
             ObjectMapper mapper = new ObjectMapper();
             try {
-                signatureRaw = mapper.writeValueAsString(selections) + finalOdd;
+                signatureRaw = mapper.writeValueAsString(signatureSelections);
             } catch (JsonProcessingException e) {
                 // fallback simples se Jackson falhar por algum motivo
-                signatureRaw = selections.toString() + finalOdd;
+                signatureRaw = signatureSelections.toString();
             }
 
             // MD5 com java.security (sem libs externas)
@@ -141,8 +162,14 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
                 ts.setHomeName(Objects.toString(s.get("home"), null));
                 ts.setAwayName(Objects.toString(s.get("away"), null));
                 ts.setMarket(Objects.toString(s.get("market"), null));
+                ts.setMarketCode(Objects.toString(s.get("market_code"), null));
                 Object oddObj = s.get("odd");
                 if (oddObj != null) ts.setOdd(Double.parseDouble(oddObj.toString()));
+                ts.setOddSource(Objects.toString(s.get("odd_source"), null));
+                Object capturedAtObj = s.get("odd_captured_at");
+                if (capturedAtObj != null) {
+                    ts.setOddCapturedAt(OffsetDateTime.parse(capturedAtObj.toString()));
+                }
                 Object probObj = s.get("prob");
                 if (probObj != null) ts.setProb(Double.parseDouble(probObj.toString()));
 
@@ -346,10 +373,34 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
         int home = Optional.ofNullable(f.getHomeGoals()).orElse(0);
         int away = Optional.ofNullable(f.getAwayGoals()).orElse(0);
         int total = home + away;
+        String homeTeam = f.getHomeTeam().getName().toLowerCase();
         String awayTeam = f.getAwayTeam().getName().toLowerCase();
-        String market = sel.getMarket().toLowerCase();
+        String market = Optional.ofNullable(sel.getMarket()).orElse("").toLowerCase();
+        String marketCode = Optional.ofNullable(sel.getMarketCode()).orElse("").toUpperCase();
 
         try {
+            switch (marketCode) {
+                case "TOTAL_OVER_0_5":
+                    return total > 0;
+                case "TOTAL_UNDER_5_5":
+                    return total <= 5;
+                case "TOTAL_UNDER_6_5":
+                    return total <= 6;
+                case "HOME_TEAM_UNDER_2_5":
+                    return home <= 2;
+                case "AWAY_TEAM_UNDER_2_5":
+                    return away <= 2;
+                case "HOME_HANDICAP_PLUS_3":
+                    return home + 3 > away;
+                case "AWAY_HANDICAP_PLUS_3":
+                    return away + 3 > home;
+                case "HOME_HANDICAP_PLUS_2":
+                    return home + 2 > away;
+                case "AWAY_HANDICAP_PLUS_2":
+                    return away + 2 > home;
+                default:
+                    // Compatibilidade com bilhetes salvos antes dos códigos.
+            }
 
             if (market.startsWith("under")) {
                 double limit = Double.parseDouble(market.replace("under", "").trim());
@@ -375,8 +426,21 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
                 String nStr = market.split("\\+")[1].split(" ")[0];
                 int n = Integer.parseInt(nStr);
 
-                // away + handicap >= home
-                return (away + n) >= home;
+                // Handicap europeu de três vias: empate após aplicar o
+                // handicap não vence a seleção do time.
+                boolean selectedAway = market.contains(awayTeam)
+                                || market.contains("(away)");
+                return selectedAway ? (away + n) > home : (home + n) > away;
+            }
+
+            if (market.matches(".*\\+[23]$")) {
+                int n = Integer.parseInt(market.substring(market.length() - 1));
+                if (market.startsWith(awayTeam)) {
+                    return away + n > home;
+                }
+                if (market.startsWith(homeTeam)) {
+                    return home + n > away;
+                }
             }
 
         } catch (Exception e) {
@@ -440,4 +504,3 @@ public class TicketProcessingServiceImpl implements TicketProcessingService {
     }
 
 }
-

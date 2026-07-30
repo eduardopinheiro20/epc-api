@@ -25,16 +25,13 @@ public class SecurityConfig {
                         .csrf(AbstractHttpConfigurer::disable)
                         .sessionManagement(s ->
                                         s.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                        )
-                        .authorizeHttpRequests(auth -> auth
-                                        // 🔓 endpoints públicos
-                                        .requestMatchers(
-                                                        "/api/auth/**",
-                                                        "/error"
-                                        ).permitAll()
-
-                                        // 🔒 todo o resto precisa de token
-                                        .anyRequest().authenticated()
+                        ).authorizeHttpRequests(auth -> auth
+                                .requestMatchers(
+                                        "/api/auth/**",
+                                        "/api/bankroll/**",
+                                        "/error"
+                                ).permitAll()
+                                .anyRequest().authenticated()
                         )
                         .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/ia")
 @CrossOrigin(origins = "http://localhost:4200")
@@ -26,6 +28,11 @@ public class IaController {
 
         TicketResponse response = iaClient.getBilheteDoDia();
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/odds-betano")
+    public ResponseEntity<?> salvarOddsBetano(@RequestBody Map<String, Object> body) {
+        return ResponseEntity.ok(iaClient.salvarOddsBetano(body));
     }
 
     @GetMapping("/processar-bilhetes")
@@ -57,4 +64,3 @@ public class IaController {
 
 
 }
-

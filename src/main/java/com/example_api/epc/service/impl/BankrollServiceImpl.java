@@ -70,7 +70,6 @@ public class BankrollServiceImpl implements BankrollService {
         );
     }
 
-
     @Override
     @Transactional
     public Map<String,Object> create(double initial) {

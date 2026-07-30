@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.OffsetDateTime;
+
 @Getter
 @Setter
 @Entity
@@ -27,7 +29,18 @@ public class TicketSelection {
     private Long fixtureId;
 
     private String market;
+
+    @Column(name = "market_code")
+    private String marketCode;
+
     private Double odd;
+
+    @Column(name = "odd_source")
+    private String oddSource;
+
+    @Column(name = "odd_captured_at")
+    private OffsetDateTime oddCapturedAt;
+
     private Double prob;
 
     @Column(name = "home_name")
